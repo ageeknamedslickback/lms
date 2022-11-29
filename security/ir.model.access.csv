@@ -6,8 +6,8 @@ access_issued_book_item_model,access_issued_book_item_model,model_issued_book_it
 access_book_item_reservation_model,access_book_item_reservation_model,model_book_item_reservation,base.group_user,1,1,1,1
 access_fine_model,access_fine_model,model_fine,base.group_user,1,1,1,1
 
-access_library_model,access_library_model,model_library,base.group_user,1,1,1,1
-access_borrowing_settings_model,access_borrowing_settings_model,model_borrowing_settings,base.group_user,1,1,1,1
-access_fine_settings_model,access_fine_settings_model,model_fine_settings,base.group_user,1,1,1,1
+access_library_model,access_library_model,model_library,base.group_system,1,1,1,1
+access_borrowing_settings_model,access_borrowing_settings_model,model_borrowing_settings,base.group_system,1,1,1,1
+access_fine_settings_model,access_fine_settings_model,model_fine_settings,base.group_system,1,1,1,1
 
 access_member_model,access_member_model,model_member,base.group_user,1,1,1,1

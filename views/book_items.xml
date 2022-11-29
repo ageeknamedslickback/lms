@@ -62,6 +62,16 @@
                             </tree> 
                         </field>
                     </page>
+                    <page string="Fines">
+                        <field name="fines">
+                            <tree string="Issued To" editable="bottom">
+                                <field name="member"/>
+                                <field name="due_date"/>
+                                <field name="returned_date"/>
+                                <field name="amount"/>
+                            </tree> 
+                        </field>
+                    </page>
                     <page string="Reservations">
                         <field name="reservations">
                             <tree string="Reservations" editable="bottom">

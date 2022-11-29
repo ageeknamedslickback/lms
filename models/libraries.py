@@ -1,6 +1,5 @@
 """Library model objects."""
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 
 
 class LibraryType:
@@ -105,11 +104,7 @@ class BorrowingSettings(models.Model):
     @api.constrains("library")
     def validate_only_one_setting(self):
         """Ensure there is only one borrowing setting."""
-        if self.search_count([]) > 1:
-            raise ValidationError(
-                "There should only be one default borrowing settings. "
-                "Delete the default one to add another."
-            )
+        pass
 
 
 class FineSettings(models.Model):
@@ -129,8 +124,4 @@ class FineSettings(models.Model):
     @api.constrains("library")
     def validate_only_one_setting(self):
         """Ensure there is only one fines setting."""
-        if self.search_count([]) > 1:
-            raise ValidationError(
-                "There should only be one default fine(s) settings."
-                " Delete the default one to add another."
-            )
+        pass
