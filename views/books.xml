@@ -15,7 +15,7 @@
     <field name="model">book</field>
     <field name="arch" type="xml">
         <tree string="Books">
-            <field name="title"/>
+            <field name="name"/>
             <field name="subject"/>
             <field name="publisher"/>
             <field name="format"/>
@@ -35,7 +35,7 @@
                 <group>
                     <group>
                         <separator string="General"/>
-                        <field name="title"/>
+                        <field name="name"/>
                         <field name="subject"/>
                         <field name="description"/>
                     </group>

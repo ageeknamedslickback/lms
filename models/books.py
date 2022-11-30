@@ -4,6 +4,7 @@ import time
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from .base import AbstractBase
 
 
 class BookFormat:
@@ -62,7 +63,7 @@ class Book(models.Model):
     _description = "A book in a library."
     _inherit = "abstract.base"
 
-    title = fields.Char(
+    name = fields.Char(
         string="Name",
         help="The title/name of the book to be added",
         required=True,
@@ -86,9 +87,17 @@ class Book(models.Model):
         selection=BookFormat.SELECTION, default=BookFormat.HARD_COVER
     )
     description = fields.Text(
-        copy=False, help="A general description of the boo"
+        copy=False, help="A general description of the book"
     )
-    author = fields.Many2one("author", required=True, ondelete="restrict")
+    author = fields.Many2one(
+        "author",
+        required=True,
+        ondelete="restrict",
+        help=(
+            "A foreign key to an author who wrote the book. "
+            "The author is stored in a different model."
+        ),
+    )
     book_items = fields.One2many("book.item", "book", string="Book Items")
 
     @api.depends("title", "author")
@@ -96,7 +105,7 @@ class Book(models.Model):
         """Display name of book model."""
         display = []
         for record in self:
-            name = f"{record.title} : {record.author.name}"
+            name = f"{record.name} : {record.author.name}"
             display.append((record.id, name))
         return display
 
@@ -148,15 +157,17 @@ class BookItem(models.Model):
         "member", ondelete="restrict", string="Member"
     )
     reservations = fields.One2many("book.item.reservation", "book_item")
+    fines = fields.One2many("fine", "book_item")
 
     def _barcode(self):
         """System generated barcode."""
-        timestamp = str(time.time())[:8]
+        timestamp = str(time.time())[-6:]
         return f"BAR-{timestamp}"
 
     def _due_date(self):
         """Calculate the due date of a book item."""
-        library_borrowing_settings = self.env["borrowing.settings"].search([])
+        library = AbstractBase.current_library(self)
+        library_borrowing_settings = library.borrowing_settings[0]
         if not library_borrowing_settings:
             raise UserError(
                 "Session library has no active borrowing settings."
@@ -200,7 +211,7 @@ class BookItem(models.Model):
 
     @api.constrains("status", "reserved_by")
     def validate_reserved_by_status(self):
-        """Ensure reserved_by is supplied when borrowing a book."""
+        """Ensure reserved_by is supplied when reserving a book."""
         if self.status == BookStatus.RESERVED and not self.reserved_by:
             raise ValidationError(
                 "Provide a member before reserving a book item."
@@ -286,7 +297,7 @@ class BookItem(models.Model):
             record.status = BookStatus.AVAILABLE
 
             due_date = issued_book_item.due_date
-            if due_date > returned_date:
+            if returned_date > due_date:
                 fine_payload = {
                     "member": record.borrowed_by.id,
                     "book_item": record.id,
@@ -457,7 +468,9 @@ class Fine(models.Model):
     book_item = fields.Many2one(
         "book.item", required=True, ondelete="restrict"
     )
-    amount = fields.Float(copy=False, compute="_compute_fine", store=True)
+    amount = fields.Float(
+        copy=False, default=lambda self: self._compute_fine()
+    )
     due_date = fields.Datetime(
         help="The return date of the issued book item.",
         copy=False,
@@ -469,29 +482,25 @@ class Fine(models.Model):
 
     def _compute_fine(self):
         """Compute fines acquired."""
-        library_fine_settings = self.env["fine.settings"].search([])
+        library = AbstractBase.current_library(self)
+        library_fine_settings = library.fine_settings[0]
         if not library_fine_settings:
             raise UserError("Session library has no active fines settings.")
 
-        for record in self:
-            duration = None
-            if library_fine_settings.duration_type == "Days":
-                delta = self.returned_date - self.due_date
-                duration = delta.days
+        delta = None
+        if library_fine_settings.duration_type == "Days":
+            delta = self.returned_date - self.due_date
 
-            elif library_fine_settings.duration_type == "Weeks":
-                delta = self.returned_date - self.due_date
-                duration = delta.weeks
+        elif library_fine_settings.duration_type == "Weeks":
+            delta = self.returned_date - self.due_date
 
-            elif library_fine_settings.duration_type == "Months":
-                delta = self.returned_date - self.due_date
-                duration = delta.months
+        elif library_fine_settings.duration_type == "Months":
+            delta = self.returned_date - self.due_date
 
-            elif library_fine_settings.duration_type == "Years":
-                delta = self.returned_date - self.due_date
-                duration = delta.years
+        elif library_fine_settings.duration_type == "Years":
+            delta = self.returned_date - self.due_date
 
-            else:
-                raise UserError("Calendar band not implemented.")
+        else:
+            raise UserError("Calendar band not implemented.")
 
-            record.amount = duration * library_fine_settings.amount
+        return delta * library_fine_settings.amount
