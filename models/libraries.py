@@ -26,7 +26,11 @@ class Library(models.Model):
     _description = "A physical library."
     _inherit = "ownerless.abstract.base"
 
-    user = fields.Many2one("res.users", ondelete="restrict")
+    user = fields.Many2one(
+        "res.users",
+        ondelete="restrict",
+        domain=lambda self: self._current_user_domain(),
+    )
     name = fields.Char(
         help="The name of the library.",
         required=True,
@@ -66,6 +70,12 @@ class Library(models.Model):
         for record in self:
             display.append((record.id, record.name))
         return display
+
+    def _current_user_domain(self):
+        """Current user search domain."""
+        user_id = self.env.user.id
+        domain = [("id", "=", user_id)]
+        return domain
 
 
 class DurationType:

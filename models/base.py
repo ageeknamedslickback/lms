@@ -34,7 +34,7 @@ class AbstractBase(models.Model):
         "library",
         ondelete="restrict",
         readonly=True,
-        domain=lambda self: self._current_user_domain(),  # TODO: Remove or make this work
+        domain=lambda self: self._library_user_domain(),
     )
 
     def _current_user_domain(self):
